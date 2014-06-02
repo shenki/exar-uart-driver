@@ -351,19 +351,11 @@ static int xr21v141x_submit_read_urbs(struct xr21v141x *xr21v141x, gfp_t mem_fla
 
 static void xr21v141x_process_read_urb(struct xr21v141x *xr21v141x, struct urb *urb)
 {
-	struct tty_struct *tty;
-
 	if (!urb->actual_length)
 		return;
 
-	tty = tty_port_tty_get(&xr21v141x->port);
-	if (!tty)
-		return;
-
-	tty_insert_flip_string(tty, urb->transfer_buffer, urb->actual_length);
-	tty_flip_buffer_push(tty);
-
-	tty_kref_put(tty);
+	tty_insert_flip_string(&xr21v141x->port, urb->transfer_buffer, urb->actual_length);
+	tty_flip_buffer_push(&xr21v141x->port);
 }
 
 static void xr21v141x_read_bulk_callback(struct urb *urb)
