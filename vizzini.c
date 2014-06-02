@@ -1093,7 +1093,7 @@ static void xr21v141x_tty_set_termios(struct tty_struct *tty,
         speed_t                  rate;
 	unsigned int             format_size, format_parity, format_stop, flow, gpio_mode;
 
-	cflag = tty->termios->c_cflag;
+	cflag = tty->termios.c_cflag;
 
         xr21v141x->clocal = ((cflag & CLOCAL) != 0);
 
