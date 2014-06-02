@@ -1,0 +1,18 @@
+Exar xr21v141x UART driver
+==========================
+
+The source code here comes from the Exar website, downloaded on 2 June 2014.
+
+It has been updated to work with the Linux kernel tty API. I have tested it on
+3.13.
+
+To build, ensure you have kernel headers and a compiler installed:
+
+$ sudo apt-get isnstall linux-headers-generic build-essential
+
+$ cd exar-uart-driver
+$ make
+$ sudo make install
+
+You will need to complete the make && sudo make install step whenever your
+kernel is updated.
