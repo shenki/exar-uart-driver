@@ -157,38 +157,6 @@ static int xr21v141x_start_wb(struct xr21v141x *xr21v141x, struct xr21v141x_wb *
 	return rc;
 }
 
-static int xr21v141x_write_start(struct xr21v141x *xr21v141x, int wbn)
-{
-	unsigned long flags;
-	struct xr21v141x_wb *wb = &xr21v141x->wb[wbn];
-	int rc;
-
-	spin_lock_irqsave(&xr21v141x->write_lock, flags);
-	if (!xr21v141x->dev) {
-		wb->use = 0;
-		spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
-		return -ENODEV;
-	}
-
-	dev_vdbg(&xr21v141x->data->dev, "%s - susp_count %d\n", __func__,
-							xr21v141x->susp_count);
-	usb_autopm_get_interface_async(xr21v141x->control);
-	if (xr21v141x->susp_count) {
-		if (!xr21v141x->delayed_wb)
-			xr21v141x->delayed_wb = wb;
-		else
-			usb_autopm_put_interface_async(xr21v141x->control);
-		spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
-		return 0;	/* A white lie */
-	}
-	usb_mark_last_busy(xr21v141x->dev);
-
-	rc = xr21v141x_start_wb(xr21v141x, wb);
-	spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
-
-	return rc;
-
-}
 /*
  * attributes exported through sysfs
  */
@@ -233,7 +201,6 @@ static void xr21v141x_ctrl_irq(struct urb *urb)
 {
 	struct xr21v141x *xr21v141x = urb->context;
 	struct usb_cdc_notification *dr = urb->transfer_buffer;
-	struct tty_struct *tty;
 	unsigned char *data;
 	int newctrl;
 	int retval;
@@ -268,17 +235,12 @@ static void xr21v141x_ctrl_irq(struct urb *urb)
 		break;
 
 	case USB_CDC_NOTIFY_SERIAL_STATE:
-		tty = tty_port_tty_get(&xr21v141x->port);
 		newctrl = get_unaligned_le16(data);
 
-		if (tty) {
-			if (!xr21v141x->clocal &&
-				(xr21v141x->ctrlin & ~newctrl & ACM_CTRL_DCD)) {
-				dev_dbg(&xr21v141x->control->dev,
+		if (!xr21v141x->clocal && (xr21v141x->ctrlin & ~newctrl & ACM_CTRL_DCD)) {
+			dev_dbg(&xr21v141x->control->dev,
 					"%s - calling hangup\n", __func__);
-				tty_hangup(tty);
-			}
-			tty_kref_put(tty);
+			tty_port_tty_hangup(&xr21v141x->port, false);
 		}
 
 		xr21v141x->ctrlin = newctrl;
@@ -415,15 +377,10 @@ static void xr21v141x_write_bulk(struct urb *urb)
 static void xr21v141x_softint(struct work_struct *work)
 {
 	struct xr21v141x *xr21v141x = container_of(work, struct xr21v141x, work);
-	struct tty_struct *tty;
 
 	dev_vdbg(&xr21v141x->data->dev, "%s\n", __func__);
 
-	tty = tty_port_tty_get(&xr21v141x->port);
-	if (!tty)
-		return;
-	tty_wakeup(tty);
-	tty_kref_put(tty);
+	tty_port_tty_wakeup(&xr21v141x->port);
 }
 
 /*
@@ -532,13 +489,16 @@ static int xr21v141x_port_activate(struct tty_port *port, struct tty_struct *tty
 	if (usb_submit_urb(xr21v141x->ctrlurb, GFP_KERNEL)) {
 		dev_err(&xr21v141x->control->dev,
 			"%s - usb_submit_urb(ctrl irq) failed\n", __func__);
+                usb_autopm_put_interface(xr21v141x->control);
 		goto error_submit_urb;
 	}
 
 	xr21v141x->ctrlout = ACM_CTRL_DTR | ACM_CTRL_RTS;
 	if (xr21v141x_set_control(xr21v141x, xr21v141x->ctrlout) < 0 &&
-	    (xr21v141x->ctrl_caps & USB_CDC_CAP_LINE))
+	    (xr21v141x->ctrl_caps & USB_CDC_CAP_LINE)) {
+                usb_autopm_put_interface(xr21v141x->control);
 		goto error_set_control;
+        }
 
 	usb_autopm_put_interface(xr21v141x->control);
 
@@ -563,7 +523,6 @@ error_submit_read_urbs:
 error_set_control:
 	usb_kill_urb(xr21v141x->ctrlurb);
 error_submit_urb:
-	usb_autopm_put_interface(xr21v141x->control);
 error_get_interface:
 disconnected:
 	mutex_unlock(&xr21v141x->mutex);
@@ -576,7 +535,6 @@ static void xr21v141x_port_destruct(struct tty_port *port)
 
 	dev_dbg(&xr21v141x->control->dev, "%s\n", __func__);
 
-	tty_unregister_device(xr21v141x_tty_driver, xr21v141x->minor);
 	xr21v141x_release_minor(xr21v141x);
 	usb_put_intf(xr21v141x->control);
 	kfree(xr21v141x->country_codes);
@@ -648,13 +606,31 @@ static int xr21v141x_tty_write(struct tty_struct *tty,
 	}
 	wb = &xr21v141x->wb[wbn];
 
+	if (!xr21v141x->dev) {
+		wb->use = 0;
+		spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
+		return -ENODEV;
+	}
+
 	count = (count > xr21v141x->writesize) ? xr21v141x->writesize : count;
 	dev_vdbg(&xr21v141x->data->dev, "%s - write %d\n", __func__, count);
 	memcpy(wb->buf, buf, count);
 	wb->len = count;
+
+	usb_autopm_get_interface_async(xr21v141x->control);
+	if (xr21v141x->susp_count) {
+		if (!xr21v141x->delayed_wb)
+			xr21v141x->delayed_wb = wb;
+		else
+			usb_autopm_put_interface_async(xr21v141x->control);
+		spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
+		return count;   /* A white lie */
+	}
+	usb_mark_last_busy(xr21v141x->dev);
+
+	stat = xr21v141x_start_wb(xr21v141x, wb);
 	spin_unlock_irqrestore(&xr21v141x->write_lock, flags);
 
-	stat = xr21v141x_write_start(xr21v141x, wbn);
 	if (stat < 0)
 		return stat;
 	return count;
@@ -1270,6 +1246,8 @@ static int xr21v141x_probe(struct usb_interface *intf,
 	int num_rx_buf;
 	int i;
 	int combined_interfaces = 0;
+	struct device *tty_dev;
+	int rv = -ENOMEM;
 
 	/* normal quirks */
 	quirks = (unsigned long)id->driver_info;
@@ -1609,7 +1587,7 @@ skip_countries:
 			 usb_rcvintpipe(usb_dev, epctrl->bEndpointAddress),
 			 xr21v141x->ctrl_buffer, ctrlsize, xr21v141x_ctrl_irq, xr21v141x,
 			 /* works around buggy devices */
-			 epctrl->bInterval ? epctrl->bInterval : 0xff);
+			 epctrl->bInterval ? epctrl->bInterval : 16);
 	xr21v141x->ctrlurb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 	xr21v141x->ctrlurb->transfer_dma = xr21v141x->ctrl_dma;
 
@@ -1625,10 +1603,24 @@ skip_countries:
 	usb_set_intfdata(data_interface, xr21v141x);
 
 	usb_get_intf(control_interface);
-	tty_register_device(xr21v141x_tty_driver, minor, &control_interface->dev);
+	tty_dev = tty_port_register_device(&xr21v141x->port, xr21v141x_tty_driver,
+			minor, &control_interface->dev);
+	if (IS_ERR(tty_dev)) {
+		rv = PTR_ERR(tty_dev);
+		goto alloc_fail8;
+	}
 
 	return 0;
+alloc_fail8:
+	if (xr21v141x->country_codes) {
+		device_remove_file(&xr21v141x->control->dev,
+				&dev_attr_wCountryCodes);
+		device_remove_file(&xr21v141x->control->dev,
+				&dev_attr_iCountryCodeRelDate);
+	}
+	device_remove_file(&xr21v141x->control->dev, &dev_attr_bmCapabilities);
 alloc_fail7:
+	usb_set_intfdata(intf, NULL);
 	for (i = 0; i < ACM_NW; i++)
 		usb_free_urb(xr21v141x->wb[i].urb);
 alloc_fail6:
@@ -1644,7 +1636,7 @@ alloc_fail2:
 	xr21v141x_release_minor(xr21v141x);
 	kfree(xr21v141x);
 alloc_fail:
-	return -ENOMEM;
+	return rv;
 }
 
 static void stop_data_traffic(struct xr21v141x *xr21v141x)
@@ -1695,6 +1687,8 @@ static void xr21v141x_disconnect(struct usb_interface *intf)
 	}
 
 	stop_data_traffic(xr21v141x);
+
+	tty_unregister_device(xr21v141x_tty_driver, xr21v141x->minor);
 
 	usb_free_urb(xr21v141x->ctrlurb);
 	for (i = 0; i < ACM_NW; i++)
@@ -1788,15 +1782,9 @@ err_out:
 static int xr21v141x_reset_resume(struct usb_interface *intf)
 {
 	struct xr21v141x *xr21v141x = usb_get_intfdata(intf);
-	struct tty_struct *tty;
 
-	if (test_bit(ASYNCB_INITIALIZED, &xr21v141x->port.flags)) {
-		tty = tty_port_tty_get(&xr21v141x->port);
-		if (tty) {
-			tty_hangup(tty);
-			tty_kref_put(tty);
-		}
-	}
+	if (test_bit(ASYNCB_INITIALIZED, &xr21v141x->port.flags))
+		tty_port_tty_hangup(&xr21v141x->port, false);
 
 	return xr21v141x_resume(intf);
 }
