@@ -1,0 +1,13 @@
+Source: vizzini
+Section: utils
+Priority: optional
+Maintainer: Ard van Breemen <ard@kwaak.net>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.3
+Homepage: http://www.exar.com/connectivity/uart-and-bridging-solutions/usb-uarts/xr21v1414
+
+Package: vizzini-modules-_KVERS_
+Architecture: any
+Provides: vizzini-modules
+Description: Exar XR21V1414 usb uart drivers for Linux (kernel _KVERS_).
+ This package provides the vizzini kernel modules for the Exar XR21V1414

@@ -1,0 +1,74 @@
+#!/usr/bin/make -f
+
+# Uncomment this to turn on verbose mode. 
+export DH_VERBOSE=1
+
+psource:=vizzini-source
+sname:=vizzini
+PACKAGE=vizzini-modules
+MA_DIR ?= /usr/share/modass
+-include $(MA_DIR)/include/generic.make
+-include $(MA_DIR)/include/common-rules.make
+DESTDIR = $(CURDIR)/debian/$(psource)/usr/src/modules/$(sname)
+
+kdist_config: prep-deb-files
+  
+kdist_clean: clean
+	$(MAKE) -f debian/rules clean
+
+kdist_image: binary-modules 
+
+binary-modules:
+	dh_testroot
+	dh_clean -k
+	dh_installdirs lib/modules/$(KVERS)/vizzini
+	$(MAKE) KERNELDIR=$(KSRC) KERNEL_VERSION=$(KVERS)
+	cp vizzini.ko debian/$(PKGNAME)/lib/modules/$(KVERS)/vizzini
+	dh_installdocs
+	dh_installchangelogs
+	dh_installmodules
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol -- -v$(VERSION)
+	dh_md5sums
+	dh_builddeb --destdir=$(DEB_DESTDIR)
+	dh_clean -k
+	dh_testdir
+	touch $@
+
+clean:
+	dh_testdir
+	$(MAKE) clean
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	dh_installdirs -p$(psource)  usr/src/modules/$(sname)/debian
+	cp Makefile README.txt vizzini.c vizzini.h vzioctl.h $(DESTDIR)
+	cp debian/*modules.in* debian/control debian/rules debian/changelog debian/copyright debian/compat debian/README.Debian $(DESTDIR)/debian
+	cd debian/$(psource)/usr/src && tar c modules | bzip2 -9 > $(sname).tar.bz2 && rm -rf modules
+	dh_install
+
+binary-indep: build install
+	dh_testdir -i
+	dh_testroot -i
+	dh_installchangelogs  -i
+	dh_installdocs -i
+	dh_link -i
+	dh_compress -i
+	dh_fixperms -i
+	dh_installdeb -i
+	dh_installdeb -i
+	dh_shlibdeps -i
+	dh_gencontrol -i
+	dh_md5sums -i
+	dh_builddeb -i
+
+binary-arch:
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install configure binary-modules kdist kdist_configure kdist_image kdist_clean

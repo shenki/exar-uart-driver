@@ -1,0 +1,9 @@
+This is the debian source module needed to get the exar vizzini usb bridge working.
+To get the source package:
+clone the repo, and:
+dpkg-buildpackage -rfakeroot
+
+This will give je a kernel module source package.
+
+Install it somewhere, untar the stuff and build the module package with:
+fakeroot make-kpkg modules-image

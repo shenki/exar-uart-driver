@@ -1,0 +1,32 @@
+This package was debianized by Ard van Breemen <ard@kwaak.net> on
+Tue, 08 Jul 2014 10:24:22 +0000
+
+It was downloaded from
+http://www.exar.com/connectivity/uart-and-bridging-solutions/usb-uarts/xr21v1414
+
+Original copyright: 
+    Copyright (c) 2013 Exar Corporation, Inc.
+
+Patches Author:
+    https://github.com/shenki
+Debianization Author:
+    https://github.com/ardje
+
+License:
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+On Debian systems, the complete text of the GNU General
+Public License can be found in `/usr/share/common-licenses/GPL-2'.
