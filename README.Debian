@@ -1,0 +1,27 @@
+Debianization of https://github.com/shenki/exar-uart-driver
+
+This is the Exar xr21v141x UART driver, originally downloaded from the exar
+website, and patched by shenki.
+The original exar drivers were made for kernel 3.6 and lower.
+This package is intended for 3.7 and higher.
+
+Usage:
+Build the package to create the module-source package:
+
+dpkg-buildpackage -rfakeroot
+
+Put that source package in your public repository.
+
+To build a debian module for your kernel:
+
+dpkg -i <the source pacackage>
+
+cd <kernel_dir>
+tar xvjf /usr/src/vizzini.tar.bz2 -C ..
+export MODULE_LOC=$PWD/../modules
+fakeroot make-kpkg modules_image
+
+This will create a suitable vizzini-module package to suit your debian kernel
+package.
+
+
