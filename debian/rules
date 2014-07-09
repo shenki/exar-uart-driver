@@ -48,7 +48,7 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	dh_installdirs -p$(psource)  usr/src/modules/$(sname)/debian
-	cp Makefile README.txt vizzini.c vizzini.h vzioctl.h $(DESTDIR)
+	cp Makefile README* vizzini.c vizzini.h vzioctl.h $(DESTDIR)
 	cp debian/*modules.in* debian/control debian/rules debian/changelog debian/copyright debian/compat debian/README.Debian $(DESTDIR)/debian
 	cd debian/$(psource)/usr/src && tar c modules | bzip2 -9 > $(sname).tar.bz2 && rm -rf modules
 	dh_install
