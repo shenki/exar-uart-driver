@@ -12,7 +12,7 @@ $ sudo apt-get isnstall linux-headers-generic build-essential
 
 $ cd exar-uart-driver
 $ make
-$ sudo make install
+$ sudo make modules_install
 
 You will need to complete the make && sudo make install step whenever your
 kernel is updated.
