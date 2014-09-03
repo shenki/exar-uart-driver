@@ -16,3 +16,5 @@ $ sudo make modules_install
 
 You will need to complete the make && sudo make install step whenever your
 kernel is updated.
+
+If you need debian packages, refer to README.Debian

@@ -1,0 +1,13 @@
+Source: vizzini
+Section: misc
+Priority: optional
+Maintainer: Ard van Breemen <ard@kwaak.net>
+Build-Depends: debhelper (>= 5), bzip2
+Standards-Version: 3.7.3
+Homepage: http://www.exar.com/connectivity/uart-and-bridging-solutions/usb-uarts/xr21v1414
+
+Package: vizzini-source
+Architecture: all
+Depends: module-assistant, debhelper (>= 5), make, bzip2
+Description: Source for the exar XR21V1414 usb uart
+ This package provides the source code for the vizzini kernel module.

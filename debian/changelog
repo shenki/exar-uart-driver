@@ -1,0 +1,11 @@
+vizzini (1.0.0-2) unstable; urgency=low
+
+  * Now based on https://github.com/shenki/exar-uart-driver instead of https://github.com/ardje/vizzini
+
+ -- Ard van Breemen <ard@kwaak.net>  Wed, 09 Jul 2014 16:22:17 +0000
+
+vizzini (1.0.0-1) unstable; urgency=low
+
+  * Initial release based on leds-alix
+
+ -- Ard van Breemen <ard@kwaak.net>  Tue, 08 Jul 2014 10:23:00 +0000
