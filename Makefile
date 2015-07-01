@@ -13,3 +13,8 @@ modules_install:
 
 clean:
 	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions vtty
+
+install-rules: 99-vizzini.rules
+	cp $< "/etc/udev/rules.d/99-vizzini.rules"
+	udevadm control --reload-rules
+	udevadm trigger --attr-match=idVendor=04e2 --verbose

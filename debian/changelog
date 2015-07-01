@@ -1,3 +1,9 @@
+vizzini (1.0.0-3) unstable; urgency=low
+
+  * Now can be loaded side-by-side with the cdc-acm module.
+
+ -- Tim 'mithro' Ansell <mithro@mithis.com>  Thu, 02 Jul 2015 01:34:00 +1030
+
 vizzini (1.0.0-2) unstable; urgency=low
 
   * Now based on https://github.com/shenki/exar-uart-driver instead of https://github.com/ardje/vizzini

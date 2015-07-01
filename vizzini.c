@@ -1853,11 +1853,13 @@ static int __init xr21v141x_init(void)
 {
 	int retval;
 	xr21v141x_tty_driver = alloc_tty_driver(XR21V141X_TTY_MINORS);
-	if (!xr21v141x_tty_driver)
+	if (!xr21v141x_tty_driver) {
+		printk(KERN_INFO KBUILD_MODNAME ": alloc_tty_driver(%d) failed\n", XR21V141X_TTY_MINORS);
 		return -ENOMEM;
+        }
 	xr21v141x_tty_driver->driver_name = "vizzini",
-	xr21v141x_tty_driver->name = "ttyUSB",
-	xr21v141x_tty_driver->major = XR21V141X_TTY_MAJOR,
+	xr21v141x_tty_driver->name = "ttyVIZ",
+	xr21v141x_tty_driver->major = 0, // Dynamically allocate the major number
 	xr21v141x_tty_driver->minor_start = 0,
 	xr21v141x_tty_driver->type = TTY_DRIVER_TYPE_SERIAL,
 	xr21v141x_tty_driver->subtype = SERIAL_TYPE_NORMAL,
@@ -1869,12 +1871,14 @@ static int __init xr21v141x_init(void)
 
 	retval = tty_register_driver(xr21v141x_tty_driver);
 	if (retval) {
+		printk(KERN_INFO KBUILD_MODNAME ": tty_register_driver failed\n");
 		put_tty_driver(xr21v141x_tty_driver);
 		return retval;
 	}
 
 	retval = usb_register(&xr21v141x_driver);
 	if (retval) {
+		printk(KERN_INFO KBUILD_MODNAME ": usb_register failed\n");
 		tty_unregister_driver(xr21v141x_tty_driver);
 		put_tty_driver(xr21v141x_tty_driver);
 		return retval;
@@ -1898,4 +1902,3 @@ module_exit(xr21v141x_exit);
 MODULE_AUTHOR(DRIVER_AUTHOR);
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
-MODULE_ALIAS_CHARDEV_MAJOR(ACM_TTY_MAJOR);
