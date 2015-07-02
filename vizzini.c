@@ -1591,7 +1591,7 @@ skip_countries:
 	xr21v141x->ctrlurb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 	xr21v141x->ctrlurb->transfer_dma = xr21v141x->ctrl_dma;
 
-	dev_info(&intf->dev, "ttyUSB%d: XR21v14x usb uart device\n", minor);
+	dev_info(&intf->dev, "ttyVIZ%d: XR21v14x usb uart device\n", minor);
 
 	xr21v141x_set_control(xr21v141x, xr21v141x->ctrlout);
 
