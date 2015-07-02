@@ -1,0 +1,1 @@
+SUBSYSTEM=="usb", ATTR{idVendor}=="04e2", RUN+="/bin/sh -c 'echo -n %k:1.0 >/sys/bus/usb/drivers/cdc_acm/unbind; echo -n %k:1.0 >/sys/bus/usb/drivers/vizzini/bind'"

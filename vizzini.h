@@ -195,7 +195,6 @@
  * Major and minor numbers.
  */
 
-#define XR21V141X_TTY_MAJOR		166
 #define XR21V141X_TTY_MINORS		32
 
 #define USB_RT_ACM		(USB_TYPE_CLASS | USB_RECIP_INTERFACE)

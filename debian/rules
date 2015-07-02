@@ -27,6 +27,8 @@ binary-modules:
 	dh_installdocs
 	dh_installchangelogs
 	dh_installmodules
+	cp debian/vizzini.udev debian/$(PKGNAME).udev
+	dh_installudev --priority=99
 	dh_compress
 	dh_fixperms
 	dh_installdeb
@@ -50,6 +52,7 @@ install: build
 	dh_installdirs -p$(psource)  usr/src/modules/$(sname)/debian
 	cp Makefile README* vizzini.c vizzini.h vzioctl.h $(DESTDIR)
 	cp debian/*modules.in* debian/control debian/rules debian/changelog debian/copyright debian/compat $(DESTDIR)/debian
+	cp 99-vizzini.rules $(DESTDIR)/debian/vizzini.udev
 	cd debian/$(psource)/usr/src && tar c modules | bzip2 -9 > $(sname).tar.bz2 && rm -rf modules
 	dh_install
 
